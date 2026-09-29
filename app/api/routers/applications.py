@@ -1,12 +1,11 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 from fastapi import status as http_status
 
 from app.api import dependencies as deps
 from app.api.schemas import ApplicationCreate, ApplicationOut
-from app.application.errors import ApplicationNotFoundError
 from app.application.ports import ApplicationFilters
 from app.application.use_cases import GetApplication, ListApplications, SubmitApplication
 from app.domain.enums import Decision, Product
@@ -48,7 +47,5 @@ def read_application(
     application_id: UUID,
     get: Annotated[GetApplication, Depends(deps.get_application)],
 ) -> ApplicationOut:
-    try:
-        return ApplicationOut.from_domain(get(application_id))
-    except ApplicationNotFoundError as exc:
-        raise HTTPException(http_status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    """Devuelve una solicitud por id. Si no existe responde 404."""
+    return ApplicationOut.from_domain(get(application_id))

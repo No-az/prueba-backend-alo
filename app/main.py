@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.api.errors import register_error_handlers
 from app.api.routers import applications
 from app.api.schemas import HealthResponse
 from app.application.ports import Clock
@@ -49,6 +50,7 @@ def create_app(
         return HealthResponse(status="ok")
 
     app.include_router(applications.router)
+    register_error_handlers(app)
     return app
 
 
