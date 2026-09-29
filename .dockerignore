@@ -8,3 +8,7 @@ __pycache__/
 .gitignore
 README.md
 .hypothesis/
+.wheelhouse/
+.github/
+.mypy_cache/
+.ruff_cache/

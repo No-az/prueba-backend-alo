@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  calidad:
+    name: Lint, tipos, tests y auditoría
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Instala dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Formato
+        run: ruff format --check .
+
+      - name: Tipos
+        run: mypy
+
+      - name: Tests
+        run: pytest -v
+
+      - name: Vulnerabilidades conocidas en dependencias
+        run: pip-audit -r requirements.txt
+
+  docker:
+    name: Comandos del enunciado en Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: docker compose build
+        run: docker compose build
+
+      - name: docker compose run --rm app pytest -v
+        run: docker compose run --rm app pytest -v
+
+      - name: docker compose up y una solicitud real
+        run: |
+          docker compose up -d
+          for _ in $(seq 1 30); do curl -fs http://localhost:8000/health && break; sleep 1; done
+          curl -fsS -X POST http://localhost:8000/applications \
+            -H 'content-type: application/json' \
+            -d '{"amount": 1200000, "monthly_income": 2500000, "employment_months": 18, "external_score": 720, "product": "PHONE"}'
+          curl -fsS "http://localhost:8000/applications?status=APPROVED&product=PHONE"
+
+      - name: Logs si algo falla
+        if: failure()
+        run: docker compose logs
+
+      - name: Limpieza
+        if: always()
+        run: docker compose down -v
