@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.api.errors import register_error_handlers
+from app.api.rate_limit import RateLimiter
 from app.api.routers import applications
 from app.api.schemas import HealthResponse
 from app.application.ports import Clock
@@ -44,6 +45,7 @@ def create_app(
     )
     app.state.session_factory = session_factory
     app.state.clock = clock or SystemClock()
+    app.state.rate_limiter = RateLimiter(settings)
 
     @app.get("/health", response_model=HealthResponse, tags=["health"])
     def health() -> HealthResponse:

@@ -14,6 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.rate_limit import RateLimitExceededError
 from app.application.errors import ApplicationNotFoundError
 from app.domain.errors import DomainError, PolicyNotFoundError
 
@@ -77,6 +78,17 @@ async def _http_error(request: Request, exc: Exception) -> JSONResponse:
     )
 
 
+async def _too_many_requests(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, RateLimitExceededError)
+    return problem(
+        request,
+        429,
+        "Demasiadas peticiones",
+        f"Espera {exc.retry_after} segundos antes de intentar de nuevo.",
+        headers={"Retry-After": str(exc.retry_after)},
+    )
+
+
 async def _unexpected(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("Error inesperado en %s %s", request.method, request.url.path)
     return problem(request, 500, "Error interno", "Ocurrió un error inesperado.")
@@ -90,5 +102,6 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(PolicyNotFoundError, _policy_missing)
     app.add_exception_handler(DomainError, _domain_error)
     app.add_exception_handler(RequestValidationError, _validation_error)
+    app.add_exception_handler(RateLimitExceededError, _too_many_requests)
     app.add_exception_handler(StarletteHTTPException, _http_error)
     app.add_exception_handler(Exception, _unexpected)

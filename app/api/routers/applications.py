@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, Response
 from fastapi import status as http_status
 
 from app.api import dependencies as deps
+from app.api.rate_limit import limit_reads, limit_writes
 from app.api.schemas import ApplicationCreate, ApplicationOut, EvaluationOut
 from app.application.ports import ApplicationFilters
 from app.application.use_cases import (
@@ -19,7 +20,12 @@ from app.domain.enums import Decision, Product
 router = APIRouter(prefix="/applications", tags=["applications"])
 
 
-@router.post("", status_code=http_status.HTTP_201_CREATED, response_model=ApplicationOut)
+@router.post(
+    "",
+    status_code=http_status.HTTP_201_CREATED,
+    response_model=ApplicationOut,
+    dependencies=[Depends(limit_writes)],
+)
 def create_application(
     payload: ApplicationCreate,
     response: Response,
@@ -32,7 +38,7 @@ def create_application(
     return ApplicationOut.from_domain(application)
 
 
-@router.get("", response_model=list[ApplicationOut])
+@router.get("", response_model=list[ApplicationOut], dependencies=[Depends(limit_reads)])
 def search_applications(
     search: Annotated[ListApplications, Depends(deps.list_applications)],
     status: Annotated[Decision | None, Query(description="APPROVED o REJECTED")] = None,
@@ -48,7 +54,7 @@ def search_applications(
     return [ApplicationOut.from_domain(application) for application in search(filters)]
 
 
-@router.get("/{application_id}", response_model=ApplicationOut)
+@router.get("/{application_id}", response_model=ApplicationOut, dependencies=[Depends(limit_reads)])
 def read_application(
     application_id: UUID,
     get: Annotated[GetApplication, Depends(deps.get_application)],
@@ -57,7 +63,11 @@ def read_application(
     return ApplicationOut.from_domain(get(application_id))
 
 
-@router.get("/{application_id}/evaluations", response_model=list[EvaluationOut])
+@router.get(
+    "/{application_id}/evaluations",
+    response_model=list[EvaluationOut],
+    dependencies=[Depends(limit_reads)],
+)
 def read_evaluation_history(
     application_id: UUID,
     history: Annotated[GetEvaluationHistory, Depends(deps.get_evaluation_history)],
@@ -69,7 +79,11 @@ def read_evaluation_history(
     return [EvaluationOut.from_domain(evaluation) for evaluation in history(application_id)]
 
 
-@router.post("/{application_id}/reevaluate", response_model=ApplicationOut)
+@router.post(
+    "/{application_id}/reevaluate",
+    response_model=ApplicationOut,
+    dependencies=[Depends(limit_writes)],
+)
 def reevaluate_application(
     application_id: UUID,
     reevaluate: Annotated[ReevaluateApplication, Depends(deps.reevaluate_application)],
