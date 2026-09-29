@@ -11,7 +11,15 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, CheckConstraint, ForeignKey, String, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.db.base import Base, DecimalString, UTCDateTime
@@ -45,6 +53,12 @@ class ApplicationRow(Base):
         CheckConstraint("monthly_income > 0", name="monthly_income"),
         CheckConstraint("employment_months >= 0", name="employment_months"),
         CheckConstraint("external_score BETWEEN 0 AND 1000", name="external_score"),
+        # Los índices siguen el orden del listado (más recientes primero) para que
+        # filtrar y ordenar se resuelva con el índice, sin ordenar en memoria.
+        Index("ix_applications_status_product_created", "status", "product", "created_at", "id"),
+        Index("ix_applications_status_created", "status", "created_at", "id"),
+        Index("ix_applications_product_created", "product", "created_at", "id"),
+        Index("ix_applications_created", "created_at", "id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -64,6 +78,7 @@ class EvaluationRow(Base):
     __table_args__ = (
         CheckConstraint(f"decision IN {DECISIONS}", name="decision"),
         CheckConstraint("trigger IN ('CREATION', 'REEVALUATION')", name="trigger"),
+        Index("ix_evaluations_application_evaluated", "application_id", "evaluated_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
