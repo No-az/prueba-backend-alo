@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
+from hypothesis import settings
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -11,6 +12,10 @@ from app.infrastructure.db.seed import seed_default_policies
 from app.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
 from app.main import create_app
 from tests.factories import StepClock
+
+# Hypothesis no guarda su base de ejemplos en disco: los tests no escriben en el repo.
+settings.register_profile("default", database=None)
+settings.load_profile("default")
 
 
 @pytest.fixture

@@ -1,9 +1,15 @@
 services:
   app:
     build: .
+    # Desarrollo: recarga automática al cambiar el código montado en /app.
+    command: sh scripts/start.sh --reload
     ports:
       - "8000:8000"
     volumes:
       - .:/app
+      - db-data:/data
     environment:
-      - DATABASE_URL=sqlite:///./credit_eval.db
+      - DATABASE_URL=sqlite:////data/credit_eval.db
+
+volumes:
+  db-data:
