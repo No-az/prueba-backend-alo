@@ -9,10 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from types import TracebackType
-from typing import Protocol, Self
+from typing import Any, Protocol, Self
 from uuid import UUID
 
-from app.domain.applications import CreditApplication
+from app.domain.applications import CreditApplication, Evaluation
 from app.domain.enums import Decision, Product
 from app.domain.policies import Policy
 
@@ -32,10 +32,22 @@ class ApplicationRepository(Protocol):
 
     def find(self, filters: ApplicationFilters) -> list[CreditApplication]: ...
 
+    def record_reevaluation(self, application: CreditApplication) -> None:
+        """Guarda la nueva evaluación y actualiza la decisión vigente."""
+        ...
+
+    def history(self, application_id: UUID) -> list[Evaluation]:
+        """Todas las evaluaciones de la solicitud, de la más antigua a la más reciente."""
+        ...
+
 
 class PolicyRepository(Protocol):
     def current_for(self, product: Product) -> Policy:
         """Última versión publicada de la política del producto."""
+        ...
+
+    def publish(self, product: Product, name: str, rules: dict[str, Any], at: datetime) -> Policy:
+        """Publica una versión nueva. Las anteriores nunca se modifican."""
         ...
 
 

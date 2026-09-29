@@ -5,9 +5,15 @@ from fastapi import APIRouter, Depends, Query, Response
 from fastapi import status as http_status
 
 from app.api import dependencies as deps
-from app.api.schemas import ApplicationCreate, ApplicationOut
+from app.api.schemas import ApplicationCreate, ApplicationOut, EvaluationOut
 from app.application.ports import ApplicationFilters
-from app.application.use_cases import GetApplication, ListApplications, SubmitApplication
+from app.application.use_cases import (
+    GetApplication,
+    GetEvaluationHistory,
+    ListApplications,
+    ReevaluateApplication,
+    SubmitApplication,
+)
 from app.domain.enums import Decision, Product
 
 router = APIRouter(prefix="/applications", tags=["applications"])
@@ -49,3 +55,28 @@ def read_application(
 ) -> ApplicationOut:
     """Devuelve una solicitud por id. Si no existe responde 404."""
     return ApplicationOut.from_domain(get(application_id))
+
+
+@router.get("/{application_id}/evaluations", response_model=list[EvaluationOut])
+def read_evaluation_history(
+    application_id: UUID,
+    history: Annotated[GetEvaluationHistory, Depends(deps.get_evaluation_history)],
+) -> list[EvaluationOut]:
+    """Todas las evaluaciones de la solicitud, de la más antigua a la más reciente.
+
+    Cada una indica con qué versión de la política se decidió.
+    """
+    return [EvaluationOut.from_domain(evaluation) for evaluation in history(application_id)]
+
+
+@router.post("/{application_id}/reevaluate", response_model=ApplicationOut)
+def reevaluate_application(
+    application_id: UUID,
+    reevaluate: Annotated[ReevaluateApplication, Depends(deps.reevaluate_application)],
+) -> ApplicationOut:
+    """Vuelve a evaluar la solicitud con la política vigente de su producto.
+
+    Útil cuando cambian los umbrales. La evaluación anterior no se borra: queda en
+    GET /applications/{id}/evaluations.
+    """
+    return ApplicationOut.from_domain(reevaluate(application_id))

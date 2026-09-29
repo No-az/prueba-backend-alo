@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -75,6 +75,21 @@ class CreditApplication:
             at=at,
         )
         return cls(id=application_id, request=request, created_at=at, latest_evaluation=evaluation)
+
+    def reevaluate(self, policy: Policy, at: datetime) -> CreditApplication:
+        """Vuelve a evaluar los mismos datos con otra versión de la política.
+
+        No modifica nada: devuelve la solicitud con una evaluación nueva, y la
+        anterior queda en el historial.
+        """
+        evaluation = Evaluation.run(
+            application_id=self.id,
+            request=self.request,
+            policy=policy,
+            trigger=EvaluationTrigger.REEVALUATION,
+            at=at,
+        )
+        return replace(self, latest_evaluation=evaluation)
 
     @property
     def status(self) -> Decision:
