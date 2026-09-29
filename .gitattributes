@@ -1,0 +1,5 @@
+# Todo lo que corre dentro del contenedor Linux va con LF, aunque se clone en Windows.
+# Sin esto, git con core.autocrlf=true convierte scripts/start.sh a CRLF y `sh` falla al arrancar.
+* text=auto eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
