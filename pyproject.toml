@@ -16,3 +16,8 @@ python_version = "3.11"
 strict = true
 plugins = ["pydantic.mypy"]
 packages = ["app"]
+
+[tool.ruff.lint.isort]
+# La carpeta alembic/ del proyecto no debe confundirse con el paquete alembic.
+known-third-party = ["alembic"]
+known-first-party = ["app", "tests"]

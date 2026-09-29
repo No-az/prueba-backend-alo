@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from app.domain.entities import CreditRequest
 from app.domain.enums import Product
 from app.domain.value_objects import Money, Score
@@ -19,3 +21,14 @@ def make_request(
         external_score=Score(external_score),
         product=product,
     )
+
+
+class StepClock:
+    """Reloj de prueba: cada llamada avanza un segundo, así el orden es predecible."""
+
+    def __init__(self, start: datetime | None = None) -> None:
+        self._current = start or datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
+
+    def now(self) -> datetime:
+        self._current += timedelta(seconds=1)
+        return self._current
