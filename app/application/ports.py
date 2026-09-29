@@ -42,8 +42,11 @@ class PolicyRepository(Protocol):
 class UnitOfWork(Protocol):
     """Agrupa los cambios de un caso de uso en una sola transacción."""
 
-    applications: ApplicationRepository
-    policies: PolicyRepository
+    @property
+    def applications(self) -> ApplicationRepository: ...
+
+    @property
+    def policies(self) -> PolicyRepository: ...
 
     def __enter__(self) -> Self: ...
 
