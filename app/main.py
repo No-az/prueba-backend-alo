@@ -9,7 +9,7 @@ app = FastAPI(title="Credit Evaluation Service")
 
 
 @app.get("/health")
-def health():
+def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
