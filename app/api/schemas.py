@@ -12,9 +12,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.domain.applications import CreditApplication
+from app.domain.applications import CreditApplication, Evaluation
 from app.domain.entities import CreditRequest
-from app.domain.enums import Decision, Product
+from app.domain.enums import Decision, EvaluationTrigger, Product
 from app.domain.rules.base import RejectionReason
 from app.domain.value_objects import Money, Score
 
@@ -110,4 +110,28 @@ class ApplicationOut(BaseModel):
             policy=PolicyRefOut(name=evaluation.policy_name, version=evaluation.policy_version),
             created_at=application.created_at,
             updated_at=application.updated_at,
+        )
+
+
+class EvaluationOut(BaseModel):
+    id: UUID
+    status: Decision
+    reasons: list[RejectionReasonOut]
+    installment: Decimal
+    installment_to_income: Decimal
+    policy: PolicyRefOut
+    trigger: EvaluationTrigger = Field(description="CREATION o REEVALUATION")
+    evaluated_at: datetime
+
+    @classmethod
+    def from_domain(cls, evaluation: Evaluation) -> EvaluationOut:
+        return cls(
+            id=evaluation.id,
+            status=evaluation.decision,
+            reasons=[RejectionReasonOut.from_domain(r) for r in evaluation.reasons],
+            installment=evaluation.installment.rounded().amount,
+            installment_to_income=evaluation.installment_ratio.rounded(),
+            policy=PolicyRefOut(name=evaluation.policy_name, version=evaluation.policy_version),
+            trigger=evaluation.trigger,
+            evaluated_at=evaluation.evaluated_at,
         )

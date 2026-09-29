@@ -60,3 +60,14 @@ def test_migrations_can_be_rolled_back(alembic_config: Config, database_url: str
     engine = make_engine(database_url)
     assert inspect(engine).get_table_names() == ["alembic_version"]
     engine.dispose()
+
+
+def test_migrated_database_protects_the_history(alembic_config: Config, database_url: str) -> None:
+    command.upgrade(alembic_config, "head")
+    engine = make_engine(database_url)
+    with engine.connect() as connection:
+        triggers = connection.exec_driver_sql(
+            "SELECT name FROM sqlite_master WHERE type = 'trigger'"
+        ).scalars()
+        assert set(triggers) == {"evaluations_no_update", "evaluations_no_delete"}
+    engine.dispose()

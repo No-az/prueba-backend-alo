@@ -12,7 +12,7 @@ from types import TracebackType
 from typing import Protocol, Self
 from uuid import UUID
 
-from app.domain.applications import CreditApplication
+from app.domain.applications import CreditApplication, Evaluation
 from app.domain.enums import Decision, Product
 from app.domain.policies import Policy
 
@@ -31,6 +31,10 @@ class ApplicationRepository(Protocol):
     def get(self, application_id: UUID) -> CreditApplication | None: ...
 
     def find(self, filters: ApplicationFilters) -> list[CreditApplication]: ...
+
+    def history(self, application_id: UUID) -> list[Evaluation]:
+        """Todas las evaluaciones de la solicitud, de la más antigua a la más reciente."""
+        ...
 
 
 class PolicyRepository(Protocol):

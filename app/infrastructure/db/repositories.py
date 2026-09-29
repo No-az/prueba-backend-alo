@@ -73,6 +73,15 @@ class SqlAlchemyApplicationRepository:
         latest = self._latest_evaluations([row.id for row in rows])
         return [mappers.application_from_row(row, latest[row.id]) for row in rows]
 
+    def history(self, application_id: UUID) -> list[Evaluation]:
+        results = self._session.execute(
+            select(EvaluationRow, PolicyVersionRow)
+            .join(PolicyVersionRow, PolicyVersionRow.id == EvaluationRow.policy_version_id)
+            .where(EvaluationRow.application_id == application_id)
+            .order_by(EvaluationRow.evaluated_at)
+        ).all()
+        return [mappers.evaluation_from_row(evaluation, policy) for evaluation, policy in results]
+
     def _add_evaluation(self, application: CreditApplication) -> None:
         evaluation = application.latest_evaluation
         policy_id = self._policies.id_of(application.request.product, evaluation.policy_version)

@@ -12,6 +12,7 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
+    DDL,
     JSON,
     BigInteger,
     CheckConstraint,
@@ -19,6 +20,7 @@ from sqlalchemy import (
     Index,
     String,
     UniqueConstraint,
+    event,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -94,3 +96,24 @@ class EvaluationRow(Base):
     installment_ratio: Mapped[Decimal] = mapped_column(DecimalString)
     trigger: Mapped[str] = mapped_column(String(16))
     evaluated_at: Mapped[datetime] = mapped_column(UTCDateTime)
+
+
+# El historial de evaluaciones es de solo inserción: la base misma rechaza
+# UPDATE y DELETE. Se registra aquí para las bases creadas con create_all
+# (tests); en las demás lo crea la migración 0003.
+APPEND_ONLY_TRIGGERS = [
+    """
+    CREATE TRIGGER evaluations_no_update BEFORE UPDATE ON evaluations
+    BEGIN SELECT RAISE(ABORT, 'evaluations is append-only'); END
+    """,
+    """
+    CREATE TRIGGER evaluations_no_delete BEFORE DELETE ON evaluations
+    BEGIN SELECT RAISE(ABORT, 'evaluations is append-only'); END
+    """,
+]
+for _statement in APPEND_ONLY_TRIGGERS:
+    event.listen(
+        EvaluationRow.__table__,
+        "after_create",
+        DDL(_statement).execute_if(dialect="sqlite"),  # type: ignore[no-untyped-call]
+    )

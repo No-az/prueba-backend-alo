@@ -5,7 +5,12 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from app.application.ports import Clock, UnitOfWork
-from app.application.use_cases import GetApplication, ListApplications, SubmitApplication
+from app.application.use_cases import (
+    GetApplication,
+    GetEvaluationHistory,
+    ListApplications,
+    SubmitApplication,
+)
 from app.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -32,3 +37,7 @@ def get_application(uow: UowDep) -> GetApplication:
 
 def list_applications(uow: UowDep) -> ListApplications:
     return ListApplications(uow)
+
+
+def get_evaluation_history(uow: UowDep) -> GetEvaluationHistory:
+    return GetEvaluationHistory(uow)
