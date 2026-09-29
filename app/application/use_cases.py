@@ -5,7 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from app.application.errors import ApplicationNotFoundError
-from app.application.ports import Clock, UnitOfWork
+from app.application.ports import ApplicationFilters, Clock, UnitOfWork
 from app.domain.applications import CreditApplication
 from app.domain.entities import CreditRequest
 
@@ -36,3 +36,12 @@ class GetApplication:
         if application is None:
             raise ApplicationNotFoundError(application_id)
         return application
+
+
+class ListApplications:
+    def __init__(self, uow: UnitOfWork) -> None:
+        self._uow = uow
+
+    def __call__(self, filters: ApplicationFilters) -> list[CreditApplication]:
+        with self._uow as uow:
+            return uow.applications.find(filters)

@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from app.application.ports import Clock, UnitOfWork
-from app.application.use_cases import GetApplication, SubmitApplication
+from app.application.use_cases import GetApplication, ListApplications, SubmitApplication
 from app.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -28,3 +28,7 @@ def submit_application(uow: UowDep, clock: ClockDep) -> SubmitApplication:
 
 def get_application(uow: UowDep) -> GetApplication:
     return GetApplication(uow)
+
+
+def list_applications(uow: UowDep) -> ListApplications:
+    return ListApplications(uow)
