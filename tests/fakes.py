@@ -6,8 +6,9 @@ de los puertos y no de SQLAlchemy.
 
 from __future__ import annotations
 
+from datetime import datetime
 from types import TracebackType
-from typing import Self
+from typing import Any, Self
 from uuid import UUID
 
 from app.application.ports import ApplicationFilters
@@ -23,6 +24,10 @@ class InMemoryApplicationRepository:
         self.evaluations: list[Evaluation] = []
 
     def add(self, application: CreditApplication) -> None:
+        self.items[application.id] = application
+        self.evaluations.append(application.latest_evaluation)
+
+    def record_reevaluation(self, application: CreditApplication) -> None:
         self.items[application.id] = application
         self.evaluations.append(application.latest_evaluation)
 
@@ -44,9 +49,16 @@ class InMemoryApplicationRepository:
 class InMemoryPolicyRepository:
     def __init__(self, catalog: PolicyCatalog | None = None) -> None:
         self._catalog = catalog or default_catalog()
+        self._published: dict[Product, Policy] = {}
 
     def current_for(self, product: Product) -> Policy:
-        return self._catalog.for_product(product)
+        return self._published.get(product) or self._catalog.for_product(product)
+
+    def publish(self, product: Product, name: str, rules: dict[str, Any], at: datetime) -> Policy:
+        version = self.current_for(product).version + 1
+        policy = Policy.from_config(product=product, name=name, version=version, rules=rules)
+        self._published[product] = policy
+        return policy
 
 
 class FakeUnitOfWork:

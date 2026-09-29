@@ -9,6 +9,7 @@ from app.application.use_cases import (
     GetApplication,
     GetEvaluationHistory,
     ListApplications,
+    ReevaluateApplication,
     SubmitApplication,
 )
 from app.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
@@ -41,3 +42,7 @@ def list_applications(uow: UowDep) -> ListApplications:
 
 def get_evaluation_history(uow: UowDep) -> GetEvaluationHistory:
     return GetEvaluationHistory(uow)
+
+
+def reevaluate_application(uow: UowDep, clock: ClockDep) -> ReevaluateApplication:
+    return ReevaluateApplication(uow, clock)

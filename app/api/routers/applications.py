@@ -11,6 +11,7 @@ from app.application.use_cases import (
     GetApplication,
     GetEvaluationHistory,
     ListApplications,
+    ReevaluateApplication,
     SubmitApplication,
 )
 from app.domain.enums import Decision, Product
@@ -66,3 +67,16 @@ def read_evaluation_history(
     Cada una indica con qué versión de la política se decidió.
     """
     return [EvaluationOut.from_domain(evaluation) for evaluation in history(application_id)]
+
+
+@router.post("/{application_id}/reevaluate", response_model=ApplicationOut)
+def reevaluate_application(
+    application_id: UUID,
+    reevaluate: Annotated[ReevaluateApplication, Depends(deps.reevaluate_application)],
+) -> ApplicationOut:
+    """Vuelve a evaluar la solicitud con la política vigente de su producto.
+
+    Útil cuando cambian los umbrales. La evaluación anterior no se borra: queda en
+    GET /applications/{id}/evaluations.
+    """
+    return ApplicationOut.from_domain(reevaluate(application_id))
